@@ -1,0 +1,21 @@
+# Fallback JSON object grammar for llama-cli debugging.
+# Prefer LlamaGrammar.from_json_schema(cv_extract.schema.json) at runtime.
+# Regenerate via: python -m ats_matcher.llm.export_grammar
+
+root   ::= object
+object ::= "{" ws members? ws "}"
+members ::= member (ws "," ws member)*
+member ::= string ws ":" ws value
+array  ::= "[" ws items? ws "]"
+items  ::= value (ws "," ws value)*
+value  ::= object | array | string | number | "true" | "false" | "null"
+string ::= "\"" chars "\""
+chars  ::= char*
+char   ::= [^"\\\x00-\x1F] | "\\" escape
+escape ::= ["\\/bfnrt] | "u" hex hex hex hex
+hex    ::= [0-9a-fA-F]
+number ::= "-"? digits frac? exp?
+digits ::= [0-9]+
+frac   ::= "." [0-9]+
+exp    ::= [eE] [+\-]? [0-9]+
+ws     ::= [ \t\n\r]*

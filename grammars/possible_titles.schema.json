@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["possible_titles"],
+  "properties": {
+    "possible_titles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 8
+    }
+  }
+}
