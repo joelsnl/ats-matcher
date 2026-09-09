@@ -1,0 +1,86 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "full_name",
+    "email",
+    "skills",
+    "years_experience",
+    "primary_industry",
+    "location",
+    "github_url",
+    "linkedin_url",
+    "recent_titles",
+    "employers",
+    "certifications",
+    "spoken_languages",
+    "birth_year",
+    "age_estimate",
+    "age_source",
+    "confidence"
+  ],
+  "properties": {
+    "full_name": { "type": ["string", "null"] },
+    "email": { "type": ["string", "null"] },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 40
+    },
+    "years_experience": { "type": ["number", "null"], "minimum": 0, "maximum": 60 },
+    "primary_industry": { "type": ["string", "null"] },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["city", "region", "country", "raw"],
+      "properties": {
+        "city": { "type": ["string", "null"] },
+        "region": { "type": ["string", "null"] },
+        "country": { "type": ["string", "null"] },
+        "raw": { "type": ["string", "null"] }
+      }
+    },
+    "github_url": { "type": ["string", "null"] },
+    "linkedin_url": { "type": ["string", "null"] },
+    "recent_titles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 5
+    },
+    "employers": {
+      "type": "array",
+      "maxItems": 15,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "client": { "type": "string" }
+        }
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 15
+    },
+    "spoken_languages": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "level": { "type": "string" }
+        }
+      }
+    },
+    "birth_year": { "type": ["integer", "null"], "minimum": 1920, "maximum": 2015 },
+    "age_estimate": { "type": ["integer", "null"], "minimum": 14, "maximum": 100 },
+    "age_source": { "type": ["string", "null"], "enum": ["explicit_cv", null] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}
