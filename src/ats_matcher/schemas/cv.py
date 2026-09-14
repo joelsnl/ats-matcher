@@ -247,7 +247,7 @@ def coerce_employer(item: Any) -> dict[str, str | None]:
 
 
 _LANG_LEVEL = re.compile(
-    r"^(?P<name>.+?)\s*(?:\(|[-—–:])\s*(?P<level>"
+    r"^(?P<name>.+?)\s*(?:\(|[--–:])\s*(?P<level>"
     r"A1|A2|B1|B2|C1|C2|"
     r"native|mother\s*tongue|bilingual|fluent|"
     r"professional(?:\s+working)?|conversational|"
@@ -258,7 +258,7 @@ _LANG_LEVEL = re.compile(
 
 
 def coerce_language(item: Any) -> dict[str, str | None]:
-    """Accept {name, level}, 'Dutch', or 'Dutch (A2)' / 'English — Native'."""
+    """Accept {name, level}, 'Dutch', or 'Dutch (A2)' / 'English - Native'."""
     if isinstance(item, SpokenLanguage):
         name, level = item.name, item.level
     elif isinstance(item, str):

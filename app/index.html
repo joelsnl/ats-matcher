@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f1efe8">
+  <title>ATS Matcher — The career desk</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
+  <script src="jobs-store.js" defer></script>
+  <script src="live-search.js" defer></script>
+  <script src="desk-logic.js" defer></script>
+  <script src="desk.js" defer></script>
+  <script src="coaching.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="sidebar">
+    <div class="masthead">
+      <a class="brand" href="#today"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 44 44" fill="none"><path d="M8 33 32 9M12 9h20v20M8 23v10h10" stroke="currentColor" stroke-width="4"/></svg></span><span>ATS<span class="brand-divider"> / </span>MATCHER<small>THE CAREER DESK</small></span></a>
+      <p class="masthead-note">A place to find<br><em>what comes next.</em></p>
+      <div class="sidebar-bottom">
+        <button class="button sidebar-cta" type="button" data-action="onboard"><span aria-hidden="true">↑</span> Import a CV</button>
+        <button class="user-switch" type="button" data-action="navigate" data-view="profile"><span class="avatar" id="avatar"></span><span><strong id="sidebar-name">Your profile</strong><small id="sidebar-plan">Local workspace</small></span><span aria-hidden="true">↗</span></button>
+      </div>
+    </div>
+    <nav aria-label="Main navigation">
+      <a href="#today" data-nav="today"><span aria-hidden="true">01</span> Daily shortlist <span class="nav-dot" aria-hidden="true">↗</span></a>
+      <a href="#live" data-nav="live"><span aria-hidden="true">02</span> Live job search</a>
+      <a href="#applications" data-nav="applications"><span aria-hidden="true">03</span> My applications <b id="saved-count">0</b></a>
+      <a href="#practice" data-nav="practice"><span aria-hidden="true">04</span> Interview practice</a>
+      <a href="#profile" data-nav="profile"><span aria-hidden="true">05</span> My profile</a>
+    </nav>
+  </header>
+  <div class="app-shell">
+    <div class="topbar"><div class="desk-location"><span class="breadcrumb">DESK /</span><strong id="page-label">Daily shortlist</strong></div><div class="topbar-right"><span class="local-badge"><i></i> Saved on this device</span><button class="icon-button" type="button" data-action="theme" id="theme-toggle" aria-label="Switch to dark mode" aria-pressed="false">☾</button><button class="icon-button" type="button" data-action="help" aria-label="About this app">?</button></div></div>
+    <main id="main" tabindex="-1"></main>
+    <footer class="app-footer"><span>ATS / MATCHER — Your search. Your direction.</span><span>Local workspace · This app does not send applications</span></footer>
+  </div>
+  <dialog id="modal" aria-labelledby="modal-title"><div class="modal-top"><span class="eyebrow" id="modal-eyebrow">YOUR WORKSPACE</span><button class="icon-button" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><div id="modal-content"></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><div class="no-script">Please enable JavaScript to use this app. Your information stays on this device.</div></noscript>
+</body>
+</html>

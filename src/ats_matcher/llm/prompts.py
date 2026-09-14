@@ -8,13 +8,14 @@ from ats_matcher.schemas.cv import CvExtract
 SYSTEM_PROMPT = """You extract structured facts from a curriculum vitae in any industry or language.
 Rules:
 - Use only information present in the CV text. Never invent employers, dates, URLs, skills, certifications, or languages.
+- location.country must be a full English country name. Expand codes such as NL to Netherlands. If a well-known city is stated without a country, fill that unambiguous country.
 - If a field is not stated, use null (or an empty array for lists). Empty skills is valid when the CV has no skills list.
 - github_url and email must be copied exactly when present; otherwise null.
 - years_experience is total professional experience in years as a number, or null. Do not count only education as work experience.
 - age_estimate and birth_year only if the CV explicitly states age or birth year. Otherwise null and age_source null.
 - If age or birth year is explicit, set age_source to "explicit_cv".
 - primary_industry is the main domain (software, healthcare, education, finance, trades, hospitality, public sector, etc.), or null.
-- employers are objects, newest first. name is who paid or contracted the person (company, agency, hospital, school, self-employed, internship host). Include client only when the CV explicitly labels a client or placement (Client, Customer, seconded to, via). Parenthetical locations, divisions, or brands are not clients. If no client is mentioned, omit the client field — do not output null, and do not invent one. Never list a client as an employer unless they were also directly employed there.
+- employers are objects, newest first. name is who paid or contracted the person (company, agency, hospital, school, self-employed, internship host). Include client only when the CV explicitly labels a client or placement (Client, Customer, seconded to, via). Parenthetical locations, divisions, or brands are not clients. If no client is mentioned, omit the client field - do not output null, and do not invent one. Never list a client as an employer unless they were also directly employed there.
 - certifications are occupational certificates, licenses, or professional credentials stated on the CV. Copy names as written. Do not treat degrees, coursework, or language-test scores as certifications.
 - spoken_languages are languages the CV says the person speaks. name is the language. Include level only when the CV states one (CEFR A1–C2, native, fluent, conversational, etc.). Omit level if unstated. Do not infer a level from nationality or location. Language-test scores (IELTS, TOEFL) are not languages unless a spoken language is also listed.
 - Output JSON only. No markdown, no commentary.
@@ -23,16 +24,16 @@ Rules:
 FIELD_GUIDE = """Fields:
 - full_name (string|null)
 - email (string|null)
-- skills (string[], max 40) — professional skills as written; empty if none are listed
+- skills (string[], max 40) - professional skills as written; empty if none are listed
 - years_experience (number|null)
 - primary_industry (string|null)
-- location: {city, region, country, raw} each string|null
+- location: {city, region, country, raw} each string|null. city is the residence city if stated. country is the full English country name (Netherlands, not NL or NLD). If the CV names a well-known city without a country, fill that unambiguous country. Leave country null when the city could be in more than one country. raw is the location as written.
 - github_url (string|null)
 - linkedin_url (string|null)
-- recent_titles (string[], max 5) — most recent job titles, newest first
-- employers ({name, client?}[], max 15) — name = employer; client only if the CV labels a client/placement
-- certifications (string[], max 15) — occupational certs and licenses only
-- spoken_languages ({name, level?}[], max 12) — spoken languages; level only if stated
+- recent_titles (string[], max 5) - most recent job titles, newest first
+- employers ({name, client?}[], max 15) - name = employer; client only if the CV labels a client/placement
+- certifications (string[], max 15) - occupational certs and licenses only
+- spoken_languages ({name, level?}[], max 12) - spoken languages; level only if stated
 - birth_year (integer|null)
 - age_estimate (integer|null)
 - age_source ("explicit_cv"|null)
@@ -41,7 +42,7 @@ FIELD_GUIDE = """Fields:
 
 TITLES_SYSTEM_PROMPT = """You infer market-standard job titles from an already-extracted CV profile.
 Rules:
-- Use only the extracted profile JSON. recent_titles are evidence of domain, not the output list — do not just copy them.
+- Use only the extracted profile JSON. recent_titles are evidence of domain, not the output list - do not just copy them.
 - Build titles from skills, work history, employers, occupational certifications, and spoken languages together. This may be any field (nursing, teaching, trades, product, finance, engineering, etc.). Languages only affect titles when the role is typically language-gated (e.g. a stated Dutch level for a Dutch-speaking customer role).
 - employer.name is the hiring company. employer.client is a placement site when present; do not treat the client as the employer.
 - If certifications contains occupational credentials (licenses or certs people are hired for), include at least one title a recruiter would search for that credential, combined with the person's background when that is natural. Ignore language tests, first-aid cards, and similar non-role certificates.
@@ -50,7 +51,7 @@ Rules:
 """
 
 TITLES_FIELD_GUIDE = """Fields:
-- possible_titles (string[], max 8) — market-standard titles this person could apply for
+- possible_titles (string[], max 8) - market-standard titles this person could apply for
 """
 
 

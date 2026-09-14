@@ -21,3 +21,4 @@ tests/fixtures/generated/
 !grammars/*.json
 .idea/
 .vscode/
+docs/

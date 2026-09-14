@@ -16,7 +16,7 @@ PHONE = re.compile(
     r"(?<!\w)(?:\+\d{1,3}[\s.\-]?)?(?:\(?\d{2,4}\)?[\s.\-]?)?\d{3,4}[\s.\-]?\d{3,4}(?!\w)"
 )
 YEAR_RANGE = re.compile(
-    r"(?P<start>(?:19|20)\d{2})\s*(?:[–\-—]|to)\s*(?P<end>(?:19|20)\d{2}|present|now|current)",
+    r"(?P<start>(?:19|20)\d{2})\s*(?:[–\--]|to)\s*(?P<end>(?:19|20)\d{2}|present|now|current)",
     re.IGNORECASE,
 )
 BARE_YEAR = re.compile(r"\b(?:19|20)\d{2}\b")

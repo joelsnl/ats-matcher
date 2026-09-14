@@ -71,7 +71,7 @@ def test_spoken_languages_parse_levels_and_dedupe():
     hints = preextract("Pat pat@example.com")
     model = CvExtract(
         full_name="Pat",
-        spoken_languages=["English (Native)", "english", "Dutch — A2", "French"],
+        spoken_languages=["English (Native)", "english", "Dutch - A2", "French"],
         confidence=0.5,
     )
     merged = merge_extract(model, hints)
