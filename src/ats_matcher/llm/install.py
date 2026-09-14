@@ -12,7 +12,7 @@ WHEEL_INDEXES = {
 DEFAULT_VERSION = "0.3.35"
 
 
-def install_llama_cpp(backend: str = "vulkan", version: str = DEFAULT_VERSION) -> None:
+def install_llama_cpp(backend: str = "cpu", version: str = DEFAULT_VERSION) -> None:
     """Install a prebuilt llama-cpp-python wheel (no C++ compiler required)."""
     if backend not in WHEEL_INDEXES:
         raise ValueError(f"Unknown backend {backend!r}. Choose: {', '.join(WHEEL_INDEXES)}")

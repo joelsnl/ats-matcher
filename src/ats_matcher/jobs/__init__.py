@@ -1,3 +1,4 @@
-from ats_matcher.jobs.base import JobProvider, NotImplementedProvider
+from ats_matcher.jobs.base import JobProvider, ProviderError
+from ats_matcher.jobs.service import JobSearchService
 
-__all__ = ["JobProvider", "NotImplementedProvider"]
+__all__ = ["JobProvider", "ProviderError", "JobSearchService"]

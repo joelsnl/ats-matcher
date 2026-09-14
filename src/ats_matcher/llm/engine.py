@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -36,7 +37,7 @@ class LlamaEngine:
         model_path: str | Path | None = None,
         *,
         n_ctx: int = 8192,
-        n_gpu_layers: int = -1,
+        n_gpu_layers: int = 0,
         complete_fn: CompleteFn | None = None,
         verbose: bool = False,
     ) -> None:
@@ -48,6 +49,7 @@ class LlamaEngine:
         self._llm: Any = None
         self._grammar: Any = None
         self._titles_grammar: Any = None
+        self._disable_thinking = bool(self.model_path and "qwen3" in self.model_path.name.lower())
         if complete_fn is None:
             self._load()
 
@@ -63,7 +65,7 @@ class LlamaEngine:
             raise ExtractionError(
                 "llama-cpp-python is not installed. On Windows do not use "
                 "`pip install -e '.[llm]'` (that builds from source). Run: "
-                "ats-match setup-llm --backend vulkan"
+                "ats-match setup-llm --backend cpu"
             ) from exc
 
         self._grammar = LlamaGrammar.from_json_schema(json.dumps(cv_extract_llm_schema()))
@@ -117,18 +119,28 @@ class LlamaEngine:
         *,
         grammar: Any = None,
         max_tokens: int = 1536,
+        temperature: float = 0.0,
+        constrained: bool = True,
     ) -> str:
         if self._complete is not None:
             return self._complete(messages)
         assert self._llm is not None
-        result = self._llm.create_chat_completion(
-            messages=messages,
-            temperature=0.0,
-            top_p=1.0,
-            grammar=self._grammar if grammar is None else grammar,
-            max_tokens=max_tokens,
-        )
-        return result["choices"][0]["message"]["content"] or ""
+        chosen = None
+        if constrained:
+            chosen = self._grammar if grammar is None else grammar
+        elif grammar is not None:
+            chosen = grammar
+        outgoing = _with_no_think(messages) if self._disable_thinking else messages
+        options: dict[str, Any] = {
+            "messages": outgoing,
+            "temperature": temperature,
+            "top_p": 0.92 if temperature else 1.0,
+            "max_tokens": max_tokens,
+        }
+        if chosen is not None:
+            options["grammar"] = chosen
+        result = self._llm.create_chat_completion(**options)
+        return _strip_think(result["choices"][0]["message"]["content"] or "")
 
 
 def _try_parse(raw: str) -> tuple[CvExtract | None, list[str]]:
@@ -193,6 +205,22 @@ def _strip_fences(raw: str) -> str:
     if start != -1 and end != -1 and end > start:
         return text[start : end + 1]
     return text
+
+
+def _strip_think(raw: str) -> str:
+    return re.sub(r"<think>.*?</think>", "", raw, flags=re.S).strip()
+
+
+def _with_no_think(messages: list[dict[str, str]]) -> list[dict[str, str]]:
+    copied = [dict(item) for item in messages]
+    for item in reversed(copied):
+        if item.get("role") != "user":
+            continue
+        content = str(item.get("content") or "")
+        if "/no_think" not in content:
+            item["content"] = content.rstrip() + "\n/no_think"
+        break
+    return copied
 
 
 def _infer_chat_format(path: Path) -> str:

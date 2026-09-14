@@ -1,0 +1,87 @@
+/* Run against --mode basic. Real coaching APIs; isolated browser + fictional CV. */
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawn}=require('node:child_process');
+(async()=>{
+  const profile=fs.mkdtempSync(path.join(os.tmpdir(),'ats-coaching-check-'));
+  const child=spawn(process.env.CHROME_PATH||'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));let ws;const checks=[];
+  const watchdog=setTimeout(()=>{console.error('FAIL Browser checks timed out');child.kill();process.exit(1);},90000);
+  try{
+    let port;for(let i=0;i<100;i++){try{port=fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0];break;}catch{}await sleep(100);}if(!port)throw Error('Browser did not start');
+    const tabs=await(await fetch('http://127.0.0.1:'+port+'/json')).json();ws=new WebSocket(tabs.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});
+    let seq=0;const pending=new Map(),errors=[];
+    ws.onmessage=e=>{const d=JSON.parse(e.data);if(d.method==='Runtime.exceptionThrown')errors.push(d.params.exceptionDetails);if(d.id){const p=pending.get(d.id);pending.delete(d.id);d.error?p.reject(Error(d.error.message)):p.resolve(d.result);}};
+    const call=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));});
+    const ev=async expression=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
+    const check=async(expression,label)=>{if(!await ev(expression))throw Error(label);checks.push(label);console.log('PASS',label);};
+    const until=async expression=>{for(let i=0;i<100;i++){if(await ev(expression))return;await sleep(50);}throw Error('Timed out waiting for '+expression);};
+    const click=async selector=>{await ev(`document.querySelector(${JSON.stringify(selector)}).click()`);await sleep(30);};
+    const fill=async(selector,value)=>ev(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+    const shot=async name=>{const r=await call('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(profile,name+'.png'),Buffer.from(r.data,'base64'));};
+    await call('Runtime.enable');await call('Page.enable');await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+    await call('Page.navigate',{url:process.argv[2]||'http://127.0.0.1:8881'});await until("typeof Coaching!=='undefined'&&typeof state!=='undefined'&&parseMode==='basic'");
+
+    await ev("state.profile.name='Taylor';state.profile.skills=['Python'];state.profile.background.achievements='I wrote Python import checks.';save();navigate('applications');");
+    await click('[data-action=desk-add-job]');
+    await fill('[name=title]','Platform Engineer');await fill('[name=company]','Example Studio');
+    await fill('[name=url]','https://example.com/jobs/platform?utm_source=newsletter');
+    await fill('[name=description]','Required: Python, Kubernetes and SQL. Communication with stakeholders.');
+    await click('#desk-job-form button[type=submit]');
+    const id=await ev('state.jobs[0].id');
+    await check("state.jobs.length===1&&Object.keys(state.applications).length===1&&state.jobs[0].description_source==='pasted'",'A pasted listing becomes a saved application without a source request');
+    await ev("closeModal();navigate('applications')");await click('[data-action=desk-add-job]');
+    await fill('[name=title]','Duplicate title');await fill('[name=company]','Example Studio');await fill('[name=url]','https://example.com/jobs/platform');await fill('[name=description]','Different description that should not replace the previous job description.');
+    await click('#desk-job-form button[type=submit]');
+    await check("state.jobs.length===1&&state.jobs[0].title==='Platform Engineer'",'Tracking URL variants reopen the original application without overwriting it');
+    await ev(`showCoverLetter('${id}')`);await click('[data-action=desk-evidence]');await until("!!document.getElementById('desk-evidence-form')");
+    await check("document.getElementById('modal').textContent.includes('Kubernetes')",'Evidence questions address actual unevidenced requirements');
+    await fill('[name=setting]','In a personal project, I used Kubernetes locally.');await fill('[name=action]','I inspected the Service selector and fixed a label mismatch.');await fill('[name=motivation]','I want to learn SQL with a team that reviews designs.');
+    await click('#desk-evidence-form button[type=submit]');
+    await check("!!document.getElementById('evidence-error').textContent&&!state.profile.background.achievements.includes('Kubernetes')",'Unconfirmed examples are not added to career evidence');
+    await click('[name=confirmed]');await click('#desk-evidence-form button[type=submit]');
+    await check(`state.profile.background.achievements.includes('personal project')&&state.applications['${id}'].motivation.includes('learn SQL')&&!state.profile.skills.includes('SQL')`,'Confirmed examples are reusable; motivation remains separate from skills');
+    await fill('#cover-letter-text','Dear team,\n\n🌱 I wrote Python import checks and would like to explain how I approached that work.\n\nBest, Taylor');
+    await ev(`window.baseFetch=window.fetch;parseMode='local-model';showCoverLetter('${id}');window.fetch=async(url,options)=>{if(url==='/api/cover-letter-revise'){window.editRequest=JSON.parse(options.body);return new Response(JSON.stringify({replacement:'I wrote Python import checks. I would welcome a discussion about that work.',review:{issues:[],word_count:25}}),{status:200});}return window.baseFetch(url,options);};const editor=document.getElementById('cover-letter-text');editor.setSelectionRange(editor.value.indexOf('I wrote'),editor.value.indexOf('Best')-2);`);
+    await click('[data-action=desk-revise]');await until("!!document.querySelector('.revision-grid')");
+    await check("window.editRequest.start===[...window.editRequest.letter.slice(0,window.editRequest.letter.indexOf('I wrote'))].length",'Unicode selection offsets match Python character positions');
+    await check(`state.applications['${id}'].coverDraft.includes('would like to explain')`,'A suggested edit leaves the saved draft unchanged until accepted');
+    await shot('passage-review-desktop');await click('[data-action=desk-accept-revision]');
+    await check(`state.applications['${id}'].coverDraft.startsWith(${JSON.stringify('Dear team,\n\n🌱 ')})&&state.applications['${id}'].coverDraft.endsWith(${JSON.stringify('\n\nBest, Taylor')})&&state.versions.some(v=>v.title==='Before revising a passage')`,'Accepting edits only the selection and preserves the original version');
+    await ev(`window.fetch=window.baseFetch;parseMode='basic';showInterviewPrep('${id}')`);await until("!!document.querySelector('.lesson-card')");
+    const skill=await ev(`state.applications['${id}'].interviewPrep.learning_plan.lessons.find(l=>l.skill==='SQL').id`);
+    await click(`[data-action=coaching-lesson][data-skill="${skill}"]`);
+    await fill('[data-practice-field=warmup]','Group the rows, then filter the aggregate with HAVING.');await click('[data-diagnostic=explain]');await click('[data-diagnostic=apply]');await click('[data-action=desk-level]');await until("!!document.querySelector('.lesson-work')");
+    await check(`state.applications['${id}'].interviewPrep.learning_plan.lessons.find(l=>l.id==='${skill}').mode==='refresher'&&!state.profile.skills.includes('SQL')`,'A completed self-diagnostic selects a refresher without claiming CV experience');
+    await fill('[data-practice-field=answer]','I would aggregate the item totals first and join those per-order totals to the orders table.');await fill('[data-practice-field=reflection]','Check what happens when an order has no items.');
+    await ev("const el=document.querySelector('[data-practice-field=recall]');el.value='independent';el.dispatchEvent(new Event('input',{bubbles:true}));");
+    await click('[data-action=coaching-complete]');
+    await check(`state.applications['${id}'].practiceProgress['${skill}'].intervalDays===7`,'Independent recall schedules a longer review interval');
+    await click('[data-action=coaching-complete]');
+    await check(`state.applications['${id}'].practiceProgress['${skill}'].intervalDays===7`,'Repeated completion does not inflate the review interval');
+    await ev(`state.applications['${id}'].practiceProgress['${skill}'].reviewOn=localDay();state.applications['${id}'].followup=localDay();save();closeModal();navigate('today');`);
+    await check("document.querySelector('.desk-agenda').textContent.includes('Review SQL')&&document.querySelector('.desk-agenda').textContent.includes('Follow up')",'Daily agenda combines due practice, application follow-ups and drafts');
+    await shot('next-actions-desktop');
+    await ev("window.exported=JSON.stringify(state);Desk.showRestore();");
+    await ev("Desk.previewBackup(new File(['{broken'], 'bad.json',{type:'application/json'}))");
+    await check("document.getElementById('backup-preview').textContent.includes('not valid JSON')&&state.profile.name==='Taylor'",'Invalid backups leave the current workspace intact');
+    await ev("Desk.previewBackup(new File([window.exported], 'workspace.json',{type:'application/json'}))");
+    await check("!!document.querySelector('[data-action=desk-confirm-restore]')",'Valid exports show a restore preview');
+    await ev("window.originalSet=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key===KEY)throw Error('quota');return window.originalSet.call(this,key,value);};");
+    await click('[data-action=desk-confirm-restore]');
+    await check("state.profile.name==='Taylor'&&document.getElementById('modal').open",'Storage failure during restore leaves the current workspace active');
+    await ev("Storage.prototype.setItem=window.originalSet;state.profile.name='Before restore';persist();");
+    await click('[data-action=desk-confirm-restore]');
+    await check(`state.profile.name==='Taylor'&&JSON.parse(localStorage.getItem(KEY+':before-restore')).profile.name==='Before restore'&&state.applications['${id}'].practiceProgress['${skill}'].intervalDays===7`,'Restore retains coaching data and writes a recovery copy of the replaced workspace');
+    await call('Page.reload');await until("typeof state!=='undefined'&&!!document.querySelector('h1')");
+    await check(`state.applications['${id}'].motivation.includes('SQL')&&state.applications['${id}'].practiceProgress['${skill}'].diagnostic.apply`, 'Motivation and diagnostic settings survive backup restore and reload');
+    for(const theme of ['light','dark']){
+      await ev(`applyTheme('${theme}')`);await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+      await ev("closeModal();navigate('today')");
+      await check("document.documentElement.scrollWidth<=innerWidth",`${theme} mobile agenda fits`);await shot(`${theme}-mobile-agenda`);
+      await ev(`Coaching.showLesson('${id}','${skill}')`);
+      await check("document.getElementById('modal').scrollWidth<=document.getElementById('modal').clientWidth+1",`${theme} mobile diagnostic and review controls fit`);await shot(`${theme}-mobile-diagnostic`);
+      await ev("closeModal();Desk.showRestore()");await ev("Desk.previewBackup(new File([JSON.stringify(state)],'workspace.json'))");
+      await check("document.getElementById('modal').scrollWidth<=document.getElementById('modal').clientWidth+1",`${theme} mobile restore preview fits`);await shot(`${theme}-mobile-restore`);
+    }
+    if(errors.length)throw Error(JSON.stringify(errors));console.log(JSON.stringify({result:'PASS',checks,screenshots:profile}));
+  }finally{clearTimeout(watchdog);if(ws)ws.close();child.kill();}
+})().catch(error=>{console.error(error);process.exitCode=1;});

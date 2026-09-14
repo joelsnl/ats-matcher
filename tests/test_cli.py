@@ -37,22 +37,28 @@ def test_parse_writes_out(tmp_path: Path):
     assert payload["github_url"] == "https://github.com/abc"
 
 
-def test_enrich_and_match_are_stubs():
+def test_enrich_is_stub_and_match_validates_profile():
     dummy = Path("pyproject.toml")
-    assert runner.invoke(app, ["enrich", "--profile", str(dummy)]).exit_code == 1
-    assert runner.invoke(app, ["match", "--profile", str(dummy)]).exit_code == 1
+    result = runner.invoke(app, ["enrich", "--profile", str(dummy)])
+    assert result.exit_code == 1
+    assert "not implemented" in result.output.lower()
+    assert runner.invoke(app, ["match", "--profile", str(dummy)]).exit_code == 2
 
 
-def test_run_parses_then_stops(tmp_path: Path):
+def test_serve_help_is_available():
+    help_text = runner.invoke(app, ["--help"]).output
+    assert "serve" in help_text
+    result = runner.invoke(app, ["serve", "--help"])
+    assert result.exit_code == 0
+    assert "localhost" in result.output.lower()
+
+
+def test_basic_run_requires_search_keywords(tmp_path: Path):
     cv = tmp_path / "cv.txt"
-    out = tmp_path / "report.json"
-    cv.write_text("Pat Lee pat.lee@example.com https://github.com/patlee\n", encoding="utf-8")
-    result = runner.invoke(app, ["run", "--cv", str(cv), "--rules-only", "--out", str(out)])
+    cv.write_text("Pat Lee pat.lee@example.com\n", encoding="utf-8")
+    result = runner.invoke(app, ["run", "--cv", str(cv), "--rules-only"])
     assert result.exit_code == 2
-    assert "enrich: not implemented" in result.output
-    report = json.loads(out.read_text(encoding="utf-8"))
-    assert report["jobs"] == []
-    assert report["user_profile"]["email"] == "pat.lee@example.com"
+    assert "keyword" in result.output
 
 
 def test_pipeline_parse_rules_only(tmp_path: Path):

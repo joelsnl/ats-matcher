@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 from ats_matcher.extract.rules import RuleHints
+from ats_matcher.geo import enrich_location
 from ats_matcher.schemas.cv import CvExtract, Location, coerce_employer, coerce_language
 
 _SKILL_COMPACT = re.compile(r"[\s_\-]+")
@@ -23,6 +24,7 @@ def merge_extract(model: CvExtract, hints: RuleHints, include_age: bool = False)
         data["age_estimate"] = None
         data["age_source"] = None
 
+    data["location"] = enrich_location(Location.model_validate(data.get("location") or {})).model_dump()
     data["skills"] = normalize_skills(data.get("skills") or [])
     data["recent_titles"] = normalize_strings(data.get("recent_titles") or [], limit=5)
     data["employers"] = normalize_employers(data.get("employers") or [])
@@ -46,7 +48,7 @@ def hints_to_cv(hints: RuleHints) -> CvExtract:
 
 
 def _estimate_years(hints: RuleHints) -> float | None:
-    # Do not sum date ranges — education + jobs over-counts. Prefer an explicit phrase.
+    # Do not sum date ranges - education + jobs over-counts. Prefer an explicit phrase.
     return hints.stated_years_experience
 
 
