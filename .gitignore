@@ -25,6 +25,7 @@ tests/fixtures/generated/
 .vscode/
 /docs/*
 !/docs/job-search.md
+!/docs/job-source-usability-plan.md
 !/docs/upstream-issue-review.md
 !/docs/cover-letters-and-practice.md
 !/docs/PROVIDERS.md
