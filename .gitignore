@@ -8,6 +8,8 @@ __pycache__/
 dist/
 build/
 .env
+.env.*
+!.env.example
 .models/
 models/
 *.gguf
@@ -21,4 +23,11 @@ tests/fixtures/generated/
 !grammars/*.json
 .idea/
 .vscode/
-docs/
+/docs/*
+!/docs/job-search.md
+!/docs/upstream-issue-review.md
+!/docs/cover-letters-and-practice.md
+!/docs/PROVIDERS.md
+!/docs/QUICKSTART_PROVIDERS.md
+!/docs/PROVIDER_EXAMPLES.md
+!/docs/IMPLEMENTATION_SUMMARY.md

@@ -106,6 +106,7 @@ def search(
     keyword: str = typer.Option(..., "--keyword", help="Job title or search terms. Only this query and filters are sent to the provider."),
     location: Optional[str] = typer.Option(None, "--location"),
     provider: Optional[str] = typer.Option(None, "--provider", help="Comma-separated source names. Defaults to JOBS_PROVIDER."),
+    career_url: Optional[str] = typer.Option(None, "--career-url", help="Search one hosted Greenhouse, Lever, or Ashby board; detects the source when --provider is omitted."),
     limit: int = typer.Option(15, "--limit", min=1, max=100),
     page: int = typer.Option(0, "--page", min=0, max=1000),
     date: str = typer.Option("past_week", "--date", help="any, past_month, past_week, 24hr (or 24h)"),
@@ -123,7 +124,7 @@ def search(
 ) -> None:
     """Search real job sources without uploading a CV."""
     try:
-        query = JobSearchQuery(keywords=keyword, location=location, limit=limit, page=page, date_since_posted=date, posted_within_days=days, job_type=job_type, workplace_type=workplace, salary=salary, experience_level=experience, sort_by=sort, has_verification=verified, under_10_applicants=under_10_applicants)
+        query = JobSearchQuery(keywords=keyword, location=location, career_url=career_url, limit=limit, page=page, date_since_posted=date, posted_within_days=days, job_type=job_type, workplace_type=workplace, salary=salary, experience_level=experience, sort_by=sort, has_verification=verified, under_10_applicants=under_10_applicants)
         result = JobSearchService().search(query, _providers(provider), translate_to=None if no_translate else translate_to, translate=not no_translate)
     except (ValueError, ValidationError) as exc:
         raise typer.BadParameter(str(exc)) from exc

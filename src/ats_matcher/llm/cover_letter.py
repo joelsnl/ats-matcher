@@ -1,4 +1,4 @@
-"""Local cover-letter generation. Facts only; gaps named, never invented."""
+"""Generate cover letters from supplied career evidence."""
 from __future__ import annotations
 
 import hashlib
@@ -9,7 +9,7 @@ from typing import Any
 from ats_matcher.jobs.skills import canonical_skill, skill_key
 from ats_matcher.llm.role_context import build_role_context, writing_facts
 
-# Distinctive phrase so tests can tell this prompt from CV extraction.
+# Prompt identifier used by injected test completers.
 TASK_MARK = "plain-text application note for one real job"
 
 ANGLES = (

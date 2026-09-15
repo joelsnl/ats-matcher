@@ -1,4 +1,4 @@
-"""Small, job-grounded practice sessions, available without a model or cloud account."""
+"""Build practice sessions from listing requirements, with optional model generation."""
 from __future__ import annotations
 
 import json
@@ -8,8 +8,7 @@ from ats_matcher.jobs.skills import canonical_skill
 from ats_matcher.llm.engine import _strip_fences
 from ats_matcher.llm.role_context import build_role_context, writing_facts
 
-# Each recipe describes a bounded activity, not a promise of job readiness.
-# Links are curated; a model cannot supply or replace them.
+# Curated practice templates and resource URLs. Model output cannot replace the URLs.
 RECIPES = {
     "Python": {
         "concept": "Separate input validation, transformation, and output. Handle expected failures explicitly so a bad record does not silently corrupt the result.",
@@ -232,7 +231,7 @@ If previous_attempt_learning_focus is present, target that uncertainty in a diff
 Never imply the candidate has used a missing tool. This is a practice scenario, not an employer's actual interview or a certification. No links, downloads, paid cloud resources, secrets, real customer data, destructive commands or fabricated achievements. Do not write an ideal autobiographical answer. Keep the exercise under 180 words; each other field under 60 words. Output English."""
     user = json.dumps({"person": writing_facts(profile, context), "role": job.get("title"), "company": job.get("company"),
                        "session": lesson, "previous_attempt_learning_focus": focus[:1200]}, ensure_ascii=False)
-    # One bounded call; the useful self-guided lesson survives invalid/model output.
+    # Preserve the base lesson if model output fails validation.
     try:
         raw = engine.complete([{"role": "system", "content": system}, {"role": "user", "content": user}], constrained=False, temperature=0.35, max_tokens=1100)
         data = json.loads(_strip_fences(raw))

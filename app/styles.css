@@ -1,4 +1,3 @@
-/* The career desk: paper, ink, numbered tabs, and a working ledger. */
 :root {
   color-scheme: light;
   --paper: #f1efe8;
@@ -416,7 +415,7 @@ dialog .button-row { margin: 12px 0 5px; }
 }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior: auto; }.button,.job-card { transition: none; }.cv-loading-mark i { animation: none; border-color: var(--green); } }
 
-/* Role-specific learning is a workbook: evidence, one attempt, then reflection. */
+/* Interview practice. */
 .practice-role-list { margin-bottom: 45px; }
 .practice-role { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 25px 0; border-bottom: 1px solid var(--line); }
 .practice-role h3 { font: 26px/1.3 var(--serif); margin: 8px 0; }
@@ -470,7 +469,7 @@ summary { cursor: pointer; padding: 5px 0; font-weight: 650; }
   .evidence-panel,.concept-note,.practice-brief { padding: 14px; }
 }
 
-/* Continuation, recovery and deliberate editing share the desk's paper vocabulary. */
+/* Application workflows and workspace recovery. */
 .desk-agenda{border:1px solid var(--line);padding:22px;margin-bottom:24px;background:var(--surface)}
 .desk-agenda article{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0;border-top:1px solid var(--line)}
 .desk-agenda p{margin:5px 0 0;font-size:13px;color:var(--muted)}

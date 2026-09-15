@@ -1,4 +1,4 @@
-"""Job-to-profile skill coverage. Related tools count; generic HR language does not."""
+"""Compare profile skills with job requirements using aliases and tool families."""
 from __future__ import annotations
 
 import re
@@ -20,7 +20,7 @@ KNOWN_SKILLS = [
     "Continuous Integration", "Continuous Delivery",
 ]
 
-# Soft-skill posting language. Everyone "has communication"; it is not a tool gap.
+# Generic posting terms excluded from technical skill gap matching.
 GENERIC_SKILLS = {
     "communication",
     "communications",

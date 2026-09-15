@@ -114,7 +114,7 @@ def _prefer_two_column(page: object, layout: str, plain: str) -> str:
     right = [w for w in words if float(w.get("x0", 0)) >= mid - 8]
     if not left or not right:
         return layout or plain
-    # Need a real gap between columns, not just a wide single column.
+    # Require a gap between columns to avoid splitting a single-column page.
     left_max = max(float(w.get("x1", 0)) for w in left)
     right_min = min(float(w.get("x0", 0)) for w in right)
     if right_min - left_max < 12:

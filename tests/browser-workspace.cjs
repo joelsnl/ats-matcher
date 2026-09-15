@@ -8,8 +8,8 @@ const {spawn}=require('node:child_process');const {pathToFileURL}=require('node:
   let port;for(let i=0;i<100;i++){try{port=fs.readFileSync(path.join(profile,'DevToolsActivePort'),'utf8').split('\n')[0];break;}catch{}await sleep(100);}if(!port)throw Error('Browser did not start');
   const tabs=await(await fetch('http://127.0.0.1:'+port+'/json')).json();ws=new WebSocket(tabs.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});
   let seq=0;const pending=new Map(),errors=[];
-  ws.onmessage=e=>{const d=JSON.parse(e.data);if(d.method==='Runtime.exceptionThrown')errors.push(d.params.exceptionDetails);if(d.id){const p=pending.get(d.id);pending.delete(d.id);d.error?p.reject(Error(d.error.message)):p.resolve(d.result);}};
-  const call=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));});
+  ws.onmessage=e=>{const d=JSON.parse(e.data);if(d.method==='Runtime.exceptionThrown')errors.push(d.params.exceptionDetails);if(d.id){const p=pending.get(d.id);pending.delete(d.id);clearTimeout(p.timer);d.error?p.reject(Error(d.error.message)):p.resolve(d.result);}};
+  const call=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;const timer=setTimeout(()=>{pending.delete(id);reject(Error('Browser command timed out: '+method));},15000);pending.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,method,params}));});
   const ev=async expression=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
   const check=async(expression,label)=>{if(!await ev(expression))throw Error(label);checks.push(label);};
   const click=async selector=>{await ev(`document.querySelector(${JSON.stringify(selector)}).click()`);await sleep(35);};
@@ -71,6 +71,14 @@ const {spawn}=require('node:child_process');const {pathToFileURL}=require('node:
   for(const view of ['today','applications','live','profile']){await click('[data-nav="'+view+'"]');await check("document.documentElement.scrollWidth<=innerWidth",'Mobile '+view+' has no horizontal overflow');}await shot('real-profile-mobile');
   await fill('[name=name]','Taylor');await fill('[name=roles]','Data analyst');await fill('[name=location]','Hamburg');await ev("document.getElementById('profile-form').requestSubmit()");await click('[data-nav="live"]');
   await check("document.querySelector('[name=keywords]').value==='Data analyst' && document.querySelector('[name=location]').value==='Hamburg'",'Edited profile supplies new search defaults');
+  await ev("document.querySelector('[name=provider]').value='greenhouse';document.querySelector('[name=provider]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await check("!document.querySelector('[name=career_url]').disabled && document.querySelector('[name=salary]').disabled && document.querySelector('[name=experience_level]').disabled && document.querySelector('[name=workplace_type]').disabled && document.querySelector('[name=job_type]').disabled",'Company sources expose career URLs and disable LinkedIn-only filters');
+  await fill('[name=career_url]','https://boards.greenhouse.io/stripe');
+  await ev("window.beforeSourceTestFetch=window.fetch;window.fetch=async(url,options)=>{if(url==='/api/jobs')window.sourceTestQuery=JSON.parse(options.body);return window.beforeSourceTestFetch(url,options);};document.getElementById('live-search-form').requestSubmit()");await sleep(80);
+  await check("window.sourceTestQuery.providers[0]==='greenhouse' && window.sourceTestQuery.career_url==='https://boards.greenhouse.io/stripe' && !('salary' in window.sourceTestQuery) && !('experience_level' in window.sourceTestQuery)",'Career URL and selected source reach the API without disabled filters');
+  await ev("window.fetch=window.beforeSourceTestFetch;document.querySelector('[name=provider]').value='linkedin';document.querySelector('[name=provider]').dispatchEvent(new Event('change',{bubbles:true}))");
+  await check("document.querySelector('[name=career_url]').disabled && !document.querySelector('[name=salary]').disabled",'Switching back to LinkedIn restores its filters');
+
   await ev("window.batch=3;window.mockPartial=false;document.getElementById('live-search-form').requestSubmit()");await sleep(80);
   await check("!document.querySelector('#live-results img, #live-results script, #live-results b') && !jobById('linkedin:500')",'Untrusted source text is escaped and unsafe listing URLs are rejected');
   await click('[data-action="save-job"][data-id="linkedin:400"]');await click('[data-nav="applications"]');await click('[data-action="workspace"][data-id="linkedin:400"]');
