@@ -2,6 +2,7 @@ from __future__ import annotations
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from ats_matcher.config import Settings, get_settings
 from ats_matcher.jobs.base import ProviderError
+from ats_matcher.jobs.ats_detector import ATSDetector, SEARCHABLE_ATS
 from ats_matcher.jobs.registry import ProviderRegistry, default_registry
 from ats_matcher.jobs.translate import GoogleTranslator, normalize_language, translate_jobs
 from ats_matcher.schemas.jobs import JobSearchQuery, JobSearchResponse, JobsMeta, ProviderResult, ProviderStatus
@@ -21,6 +22,14 @@ class JobSearchService:
         self.translator = translator if translator is not None else GoogleTranslator(timeout=self.settings.jobs_timeout)
 
     def search(self, query: JobSearchQuery, providers: list[str] | None = None, *, translate_to: str | None = None, translate: bool | None = None) -> JobSearchResponse:
+        if query.career_url:
+            detected = ATSDetector.detect(query.career_url)
+            if not detected or detected[0] not in SEARCHABLE_ATS:
+                raise ValueError("Use a hosted Greenhouse, Lever, or Ashby career URL.")
+            if providers is None:
+                providers = [detected[0]]
+            elif {name.strip().lower() for name in providers} != {detected[0]}:
+                raise ValueError("The career URL must match the selected source.")
         names = list(dict.fromkeys(name.strip().lower() for name in (providers if providers is not None else self.settings.jobs_provider.split(",")) if name.strip()))
         if not names:
             raise ValueError("Select at least one job provider.")

@@ -1,0 +1,4 @@
+slug,name,industry,ats_type,board_slug,country,hq_location
+stripe,Stripe,fintech,greenhouse,stripe,US,San Francisco
+spotify,Spotify,music,lever,spotify,SE,Stockholm
+openai,OpenAI,ai,ashby,openai,US,San Francisco

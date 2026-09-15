@@ -1,4 +1,4 @@
-/* Small, explicit workflows around the career desk. User content stays plain text. */
+/* Application workflows and workspace recovery. Render user content as plain text. */
 'use strict';
 const Desk=(()=>{
   let pendingBackup=null,backupEpoch=0,revision=null;

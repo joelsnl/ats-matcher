@@ -1,4 +1,4 @@
-/* Shared live-listing normalization; also testable with Node's built-in test runner. */
+/* Shared job listing normalization. */
 (function(root){
   'use strict';
   const string=(value,max=500)=>typeof value==='string'?value.trim().slice(0,max):'';

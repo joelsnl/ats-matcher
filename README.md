@@ -1,13 +1,13 @@
 # ATS Matcher
 
-Local CV reader and LinkedIn job matcher. Parse a resume with optional **llama.cpp**, search **public guest job listings**, compare them with your actual skills (including related tools), and keep applications, cover-letter drafts, and interview prep in a browser workspace on localhost.
+Local CV reader and multi-source job matcher. Parse a resume with optional **llama.cpp**, search **public job listings**, compare them with your actual skills (including related tools), and keep applications, cover-letter drafts, and interview prep in a browser workspace on localhost.
 
 Version **0.2.0**. GitHub enrichment is still unimplemented. This is a loopback development app, not a production deployment and not an ATS score.
 
 ## What it does
 
 - **Parse** PDF, Word, or text CVs into structured JSON (`full_name`, skills, titles, employers, location, …). Age is omitted unless you pass `--include-age` and the CV states it.
-- **Search** live LinkedIn jobs from the CLI or the browser. Keyword, location, date window (including custom 1–365 days), job type, work arrangement, salary band, experience, sort, pagination, verification, and under-10-applicants filters. Multiple types/arrangements/levels can be combined.
+- **Search** LinkedIn, Greenhouse, Lever, Ashby, Freehire, and optionally Indeed from the CLI or browser. Filter support varies by source. LinkedIn supports: Keyword, location, date window (including custom 1–365 days), job type, work arrangement, salary band, experience, sort, pagination, verification, and under-10-applicants filters. Multiple types/arrangements/levels can be combined.
 - **Read public posting pages** for the full description when search cards are thin. Non-English descriptions can be translated with Google Translate (default English).
 - **Match** listings to a profile. Related tools count (GitHub Actions / Jenkins / GitLab CI/CD cover CI/CD). Generic posting language such as Communication is ignored. Sibling products are not equated (Docker is not Kubernetes; AWS is not Azure).
 - **Browser workspace** (localhost): live shortlist, save/pass, application stages and notes, evidence comparison, cover letters, role-specific practice, dark/light theme. Progress stays in this browser.
@@ -152,23 +152,93 @@ ats-match enrich --profile cv.json    # not implemented
 ats-match setup-llm --backend vulkan
 ```
 
-`match` searches from suggested/recent titles (OR), or `--keyword`. `--rules-only` parse does not infer titles, so pass a keyword. Only search terms and filters go to LinkedIn, not the CV file. Location from a parsed profile is normalized to `City, Country` when possible.
+`match` searches from suggested/recent titles (OR), or `--keyword`. `--rules-only` parse does not infer titles, so pass a keyword. Only search terms and filters go to the selected source, not the CV file. Location from a parsed profile is normalized to `City, Country` when possible.
 
 Search exit codes: 0 = ok (including zero hits), 1 = all sources failed, 2 = partial results or a validation error. Inspect `jobs_meta`.
 
+## Additional job sources
+
+Choose a source in **Live job search**, pass `--provider`, or set `JOBS_PROVIDER`
+(comma-separated sources for the CLI/API). A provider searches only its own catalogue.
+
+| Source | Scope and requirements |
+| --- | --- |
+| LinkedIn | Public guest search; default source. |
+| Greenhouse | Configured company boards; Stripe is the bundled example. |
+| Lever | Configured company boards; Spotify is the bundled example. EU boards are supported. |
+| Ashby | Configured company boards; OpenAI is the bundled example. |
+| Freehire | Public catalogue search; availability depends on upstream access controls. |
+| Indeed | Optional `python-jobspy` integration; install with `pip install -e ".[indeed]"`. |
+
+For a specific company, select its ATS source and paste its hosted **Company career URL**
+in the browser. The CLI can detect the source automatically:
+
+```powershell
+ats-match search --keyword engineer --career-url https://boards.greenhouse.io/stripe --date any
+ats-match search --keyword engineer --provider greenhouse,lever --date any
+```
+
+`career_url` is also accepted by `POST /api/jobs`. If `providers` is supplied alongside
+it, it must contain only the matching source. URLs are parsed locally; the app requests
+only the supported provider API, never an arbitrary supplied page. Detection of other
+ATS hosts does not imply search support for those systems.
+
+Configure board tokens in `.env` using `JOBS_GREENHOUSE_BOARDS`, `JOBS_LEVER_BOARDS`,
+and `JOBS_ASHBY_BOARDS` (comma-separated). For EU Lever use `eu:company-token`.
+Omitting a setting uses the bundled example; an empty value disables its default boards.
+A career URL overrides the configured boards for that search. Company tokens and ATS
+vendors can change; stale boards produce explicit failures. The packaged company CSV
+is a small example catalogue, not a directory of all employers.
+
+Set `JOBS_INDEED_COUNTRY=germany` (or another JobSpy country name) for Indeed; its default
+is `usa`. JobSpy manages its own HTTP timeouts, pacing, and retries, independently of
+`JOBS_TIMEOUT`, `JOBS_REQUEST_DELAY`, and `JOBS_RETRIES`. The optional dependency is
+loaded only when Indeed is selected. No proxy configuration is supplied.
+
+### Filter and paging behavior
+
+- LinkedIn-only salary bands, experience levels, verification, and applicant-count
+  filters are disabled in the browser for other sources. CLI/API requests using them
+  return an actionable error instead of silently ignoring them.
+- Company boards apply keywords, location, dates, job type, and work arrangement locally.
+  Quoted titles joined with `OR` from profile matching are supported. Location is a
+  substring of the actual listing location: try `Berlin` instead of `Berlin, Germany`
+  if the source only publishes a city. Unknown type/arrangement values do not pass filters.
+- A date filter excludes jobs without a known publication date; **Any time** includes
+  them. Edit timestamps are never substituted for publication dates. Warnings report
+  missing dates and malformed listings. Greenhouse does not expose standard job type or
+  work arrangement fields; those filters are disabled for Greenhouse.
+- Company-board **Most recent** sorts all matched jobs from the scanned boards before
+  paging. Relevance preserves source order. At most `JOBS_MAX_PAGES` boards are requested,
+  with a visible warning if that truncates the configured catalogue.
+- LinkedIn pages use 25-position offsets. Other sources use `page * limit`; keep the
+  maximum results value unchanged when following **Next source page**. Public catalogues
+  can change between requests.
+- Freehire uses its search endpoint and checks for ignored parameters. Its location
+  filter applies within each source page. Indeed applies job type and remote filters
+  within each page and can sort that page by date. Both can return fewer matches than
+  the page size; **Next source page** continues where supported. Freehire does not
+  support temporary/volunteer filters; Indeed cannot distinguish hybrid from on-site.
+- HTTP failures and malformed responses are reported as errors or partial results.
+  A valid empty catalogue is a successful empty search. Failed board requests are not
+  cached as successful empty results. Retries honor bounded `Retry-After` delays.
+
+Adapter contracts: [Greenhouse Job Board API](https://docs.greenhouse.io/job-board.html),
+[Lever postings API](https://github.com/lever/postings-api),
+[Ashby public postings](https://developers.ashbyhq.com/docs/public-job-posting-api),
+[Freehire API](https://freehire.me/docs/api), and [JobSpy](https://github.com/speedyapply/JobSpy).
+
 ## Job search and public LinkedIn pages
 
-LinkedIn is the only registered channel today. The Python adapter is informed by
+LinkedIn remains the default channel. Its Python adapter is informed by
 [linkedin-jobs-api](https://github.com/VishwaGauravIn/linkedin-jobs-api)
 (public filters, 25-item page offsets, job-card fields). There is no Node dependency and no official LinkedIn API.
 
 It requests **unauthenticated guest job pages** a browser can open without signing in. It does not log in, store LinkedIn passwords, rotate proxies, or bypass verification walls.
 
-The reference README
-[Our Sponsor](https://github.com/VishwaGauravIn/linkedin-jobs-api#our-sponsor)
-section states that scraping **public** LinkedIn data was “battle tested in court in HiQ VS LinkedIn case”. That note is about public profile data from their sponsor. This project uses the same public-page idea for **guest job search and public posting pages**, not private profiles or anything behind a login.
-
-The sponsor README’s “300 requests/minute” figure is for Proxycurl, not the public jobs endpoint. This repo paces its own requests (`JOBS_REQUEST_DELAY`, retries, `Retry-After`). Details: [job-search.md](docs/job-search.md#error-handling-and-limits). Addressed upstream issues: [upstream-issue-review.md](docs/upstream-issue-review.md).
+Requests are paced with `JOBS_REQUEST_DELAY`, bounded retries, and `Retry-After`.
+See [request limits](docs/job-search.md#error-handling-and-limits) and the
+[upstream issue review](docs/upstream-issue-review.md).
 
 Architecture, filters, caching, and how to add a source: [docs/job-search.md](docs/job-search.md).
 
@@ -207,7 +277,7 @@ src/ats_matcher/
   geo.py              CV location → City, Country
   extract/            PDF/DOCX/text + regex pre-extract
   llm/                llama.cpp, cover letters, interview prep
-  jobs/               Search service, cache, LinkedIn provider, skill coverage, translate
+  jobs/               Search service, public-source adapters, company boards, cache, skill coverage, translate
   schemas/            Pydantic models
 app/                  Browser UI (no build step)
 docs/                 Job-search guide and upstream issue review

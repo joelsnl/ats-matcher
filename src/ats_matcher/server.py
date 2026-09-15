@@ -389,7 +389,7 @@ def create_server(
                 self._json(502, {"error": "Interview prep could not be built. Please try again."})
 
         def _coaching(self, route: str) -> None:
-            """Read-only analysis and single-session generation share strict input limits."""
+            """Validate coaching requests and dispatch the requested operation."""
             try:
                 length = int(self.headers.get("Content-Length", "0"))
                 if self.headers.get("Transfer-Encoding") or not 0 < length <= 96000:

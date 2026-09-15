@@ -2,6 +2,11 @@ from __future__ import annotations
 from threading import Lock
 from ats_matcher.config import Settings
 from ats_matcher.jobs.providers.linkedin import LinkedInProvider
+from ats_matcher.jobs.providers.indeed import IndeedProvider
+from ats_matcher.jobs.providers.freehire import FreehireProvider
+from ats_matcher.jobs.providers.greenhouse import GreenhouseProvider
+from ats_matcher.jobs.providers.lever import LeverProvider
+from ats_matcher.jobs.providers.ashby import AshbyProvider
 
 
 class ProviderRegistry:
@@ -30,16 +35,17 @@ class ProviderRegistry:
 
 def default_registry(settings: Settings) -> ProviderRegistry:
     registry = ProviderRegistry()
-    registry.register(
-        "linkedin",
-        lambda: LinkedInProvider(
-            timeout=settings.jobs_timeout,
-            delay=settings.jobs_request_delay,
-            retries=settings.jobs_retries,
-            max_pages=settings.jobs_max_pages,
-            cache_ttl=settings.jobs_cache_ttl,
-            fetch_descriptions=settings.jobs_fetch_descriptions,
-        ),
-        label="LinkedIn",
-    )
+    public_options = dict(timeout=settings.jobs_timeout, delay=settings.jobs_request_delay,
+                          retries=settings.jobs_retries, cache_ttl=settings.jobs_cache_ttl,
+                          fetch_descriptions=settings.jobs_fetch_descriptions)
+    registry.register("linkedin", lambda: LinkedInProvider(**public_options, max_pages=settings.jobs_max_pages), label="LinkedIn")
+    for name, adapter, label in (("greenhouse", GreenhouseProvider, "Greenhouse"),
+                                  ("lever", LeverProvider, "Lever"), ("ashby", AshbyProvider, "Ashby")):
+        configured = getattr(settings, f"jobs_{name}_boards")
+        boards = None if configured is None else [token.strip() for token in configured.split(",") if token.strip()]
+        registry.register(name, lambda adapter=adapter, boards=boards: adapter(
+            **public_options, boards=boards, max_pages=settings.jobs_max_pages), label=label)
+    registry.register("freehire", lambda: FreehireProvider(**public_options), label="Freehire")
+    registry.register("indeed", lambda: IndeedProvider(country=settings.jobs_indeed_country,
+        cache_ttl=settings.jobs_cache_ttl, fetch_descriptions=settings.jobs_fetch_descriptions), label="Indeed (optional extra)")
     return registry

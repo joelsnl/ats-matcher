@@ -1,1 +1,1 @@
-"""Source-specific job adapters. Add future channels here."""
+"""Source-specific job adapters."""

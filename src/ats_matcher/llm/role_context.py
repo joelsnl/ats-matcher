@@ -1,4 +1,4 @@
-"""Traceable requirements for writing and coaching. Absence is not inability."""
+"""Extract listing requirements and associate them with supplied career evidence."""
 from __future__ import annotations
 
 import hashlib
@@ -8,7 +8,7 @@ from typing import Any
 
 from ats_matcher.jobs.skills import ALIASES, canonical_skill, compare_skills, mentioned_skills, skill_key
 
-# These are practice topics, never a personality score or a claim of competence.
+# Interview practice topics.
 SOFT_TOPICS = {
     "Communication": ("communication", "communicate", "explain", "explained", "presenting", "presentation", "stakeholder", "stakeholders", "communicatief", "communicatie"),
     "Collaboration": ("collaboration", "collaborate", "collaborated", "cross-functional", "teamwork", "samenwerken", "samenwerking"),
@@ -71,7 +71,7 @@ def _requirements(description: str, extras: list[str]) -> list[dict[str, str]]:
             # "Go the extra mile" is not the programming language.
             if name == "Go" and not (line.strip(" .-*") == "Go" or re.search(r"\bGo\b", line) and re.search(r"\b(?:Golang|language|programming|developer|engineer|backend|Python|Java|Rust|TypeScript)\b|\b(?:using|with|in) Go\b", line, re.I)):
                 continue
-            # A waived requirement is neither a gap nor a reason to reject someone.
+            # Exclude explicitly waived requirements from skill gaps.
             waived = any(re.search(r"\b(?:no|not)\s+(?:prior\s+)?" + re.escape(alias) + r"\s+(?:experience\s+)?(?:needed|required|necessary)\b", line, re.I)
                          or re.search(re.escape(alias) + r"\s+(?:experience\s+)?(?:is\s+)?not\s+(?:needed|required|necessary)\b", line, re.I)
                          for alias in labels_for(name))

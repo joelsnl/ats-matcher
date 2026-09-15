@@ -14,6 +14,7 @@ class JobSearchQuery(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, str_strip_whitespace=True)
     keywords: str = Field(min_length=1, max_length=300, validation_alias=AliasChoices("keywords", "keyword"))
     location: str | None = Field(default=None, max_length=200)
+    career_url: str | None = Field(default=None, max_length=2000)
     date_since_posted: Literal["any", "past_month", "past_week", "24hr"] = Field(default="past_week", validation_alias=AliasChoices("date_since_posted", "dateSincePosted"))
     posted_within_days: int | None = Field(default=None, ge=1, le=365, strict=True, validation_alias=AliasChoices("posted_within_days", "postedWithinDays"))
     job_type: JobType | Annotated[list[JobType], Field(min_length=1, max_length=6)] | None = Field(default=None, validation_alias=AliasChoices("job_type", "jobType"))

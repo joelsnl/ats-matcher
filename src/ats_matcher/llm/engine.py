@@ -152,7 +152,7 @@ def _try_parse(raw: str) -> tuple[CvExtract | None, list[str]]:
         return None, [f"json: {exc}"]
     try:
         model = CvExtract.model_validate(data)
-    except Exception as exc:  # pydantic ValidationError
+    except Exception as exc:
         return None, [f"schema: {exc}"]
     if not (model.full_name and model.full_name.strip()):
         problems.append("missing full_name")

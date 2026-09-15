@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ats-matcher"
 version = "0.2.0"
-description = "Local ATS CV parser and LinkedIn job matcher (llama.cpp)"
+description = "Local ATS CV parser and multi-source job matcher (llama.cpp)"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "ATS Matcher" }]
@@ -22,6 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 llm = ["llama-cpp-python>=0.3.2"]
 dev = ["pytest>=8.0", "reportlab>=4.2"]
+indeed = ["python-jobspy>=1.1.82,<2"]
 
 [project.scripts]
 ats-match = "ats_matcher.cli:app"
@@ -29,8 +30,12 @@ ats-match = "ats_matcher.cli:app"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"ats_matcher.jobs" = ["data/*.csv"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 markers = [
     "llm: tests that load a local GGUF via llama.cpp",
     "live: tests that hit the network",

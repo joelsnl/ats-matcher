@@ -1,4 +1,4 @@
-/* Evidence, writing and deliberate practice. No generated content is rendered as HTML. */
+/* Coaching workflows. Render generated content as plain text. */
 'use strict';
 const Coaching=(()=>{
   const clip=(v,n=500)=>typeof v==='string'?v.slice(0,n):'';

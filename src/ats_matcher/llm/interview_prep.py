@@ -22,7 +22,7 @@ class OpenResource:
     always: bool = False
 
 
-# Public, free materials. Matched to the listing instead of generating a syllabus.
+# Curated reference materials indexed by skill.
 OPEN_RESOURCES = (
     OpenResource(
         "Tech Interview Handbook",
