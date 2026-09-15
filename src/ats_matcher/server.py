@@ -200,6 +200,13 @@ def create_server(
             # Do not log uploaded content, file names, or extracted CV details.
             pass
 
+        def handle(self) -> None:
+            try:
+                super().handle()
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+                # Refreshing or closing a tab may disconnect during a response.
+                self.close_connection = True
+
         def _allowed(self) -> bool:
             actual_port = self.server.server_port
             hosts = {f"127.0.0.1:{actual_port}", f"localhost:{actual_port}"}
@@ -219,12 +226,41 @@ def create_server(
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
+            # CORS: Allow requests from same origin (localhost or 127.0.0.1)
+            origin = self.headers.get("Origin")
+            if origin in {f"http://127.0.0.1:{self.server.server_port}", f"http://localhost:{self.server.server_port}"}:
+                # Echo back the origin if it's localhost/127.0.0.1 on the right port
+                self.send_header("Access-Control-Allow-Origin", origin)
+            else:
+                # Fallback for non-CORS requests
+                self.send_header("Access-Control-Allow-Origin", f"http://127.0.0.1:{self.server.server_port}")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Credentials", "false")
             self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
             self.end_headers()
             self.wfile.write(body)
 
         def _json(self, status: int, payload: dict) -> None:
             self._send(status, json.dumps(payload, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+
+        def do_OPTIONS(self) -> None:
+            """Handle CORS preflight requests."""
+            if not self._allowed():
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            # CORS: Echo back the origin
+            origin = self.headers.get("Origin")
+            if origin in {f"http://127.0.0.1:{self.server.server_port}", f"http://localhost:{self.server.server_port}"}:
+                self.send_header("Access-Control-Allow-Origin", origin)
+            else:
+                self.send_header("Access-Control-Allow-Origin", f"http://127.0.0.1:{self.server.server_port}")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Credentials", "false")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
 
         def do_GET(self) -> None:
             if not self._allowed():
@@ -234,7 +270,7 @@ def create_server(
                 self._json(200, {"mode": reading, "device": device, "sample_jobs": False, "live_jobs": True, "cover_letter": use_llm, "interview_prep": True, "interview_stories": use_llm, "translate": search_service.settings.jobs_translate, "translate_to": search_service.settings.jobs_translate_to, "languages": language_choices()})
                 return
             if route == "/api/providers":
-                self._json(200, {"providers": search_service.registry.list()})
+                self._json(200, {"providers": search_service.registry.list_with_readiness()})
                 return
             files = {"/desk-logic.js": ("desk-logic.js", "text/javascript"), "/desk.js": ("desk.js", "text/javascript"), "/coaching.js": ("coaching.js", "text/javascript"), "/jobs-store.js": ("jobs-store.js", "text/javascript"), "/": ("index.html", "text/html"), "/index.html": ("index.html", "text/html"), "/styles.css": ("styles.css", "text/css"), "/app.js": ("app.js", "text/javascript"), "/live-search.js": ("live-search.js", "text/javascript"), "/theme.js": ("theme.js", "text/javascript")}
             if route not in files:

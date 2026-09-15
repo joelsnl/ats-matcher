@@ -159,6 +159,45 @@ def test_foreign_origin_and_host_are_rejected(app_server):
     assert request(app_server, "GET", "/api/health", headers=headers)[0] == 200
 
 
+@pytest.mark.parametrize("header,value", [
+    ("Host", "localhost.attacker.example:8765"),
+    ("Host", "127.0.0.1.attacker.example:8765"),
+    ("Host", "localhost:1"),
+    ("Origin", "http://localhost.attacker.example"),
+    ("Origin", "http://127.0.0.1.attacker.example"),
+    ("Origin", "http://localhost:1"),
+])
+def test_localhost_prefixes_do_not_bypass_origin_checks(app_server, header, value):
+    status, _, headers = request(app_server, "GET", "/", headers={header: value})
+    assert status == 403
+    assert headers.get("Access-Control-Allow-Origin") != value
+
+
+@pytest.mark.parametrize("error", [ConnectionAbortedError, ConnectionResetError, BrokenPipeError])
+def test_browser_disconnect_is_handled(app_server, monkeypatch, error):
+    from http.server import BaseHTTPRequestHandler
+
+    def disconnect(self):
+        raise error("browser disconnected")
+
+    handler = object.__new__(app_server.RequestHandlerClass)
+    monkeypatch.setattr(BaseHTTPRequestHandler, "handle", disconnect)
+    handler.handle()
+    assert handler.close_connection
+
+
+def test_unexpected_handler_errors_are_not_hidden(app_server, monkeypatch):
+    from http.server import BaseHTTPRequestHandler
+
+    def fail(self):
+        raise RuntimeError("unexpected failure")
+
+    handler = object.__new__(app_server.RequestHandlerClass)
+    monkeypatch.setattr(BaseHTTPRequestHandler, "handle", fail)
+    with pytest.raises(RuntimeError, match="unexpected failure"):
+        handler.handle()
+
+
 def test_upload_limits_and_file_types(app_server):
     assert request(app_server, "POST", "/api/parse", b"x", {"X-CV-Extension": "exe"})[0] == 400
     assert request(app_server, "POST", "/api/parse", b"", {"X-CV-Extension": "pdf"})[0] == 400

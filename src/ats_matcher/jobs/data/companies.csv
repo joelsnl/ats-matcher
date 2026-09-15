@@ -1,4 +1,66 @@
 slug,name,industry,ats_type,board_slug,country,hq_location
 stripe,Stripe,fintech,greenhouse,stripe,US,San Francisco
-spotify,Spotify,music,lever,spotify,SE,Stockholm
+intercom,Intercom,saas,greenhouse,intercom,IE,Dublin
+twilio,Twilio,telecom,greenhouse,twilio,US,San Francisco
+figma,Figma,design,greenhouse,figma,US,San Francisco
+databricks,Databricks,data,greenhouse,databricks,US,San Francisco
+guidepoint,Guidepoint,finance,greenhouse,guidepoint,US,New York
+asana,Asana,productivity,greenhouse,asana,US,San Francisco
+calendly,Calendly,saas,greenhouse,calendly,US,Atlanta
+datadog,Datadog,monitoring,greenhouse,datadog,US,New York
+hubspot,HubSpot,crm,greenhouse,hubspot,US,Cambridge
+mixpanel,Mixpanel,analytics,greenhouse,mixpanel,US,San Francisco
+elastic,Elastic,search,greenhouse,elastic,US,Mountain View
+mongodb,MongoDB,database,greenhouse,mongodb,US,New York
+airbnb,Airbnb,travel,greenhouse,airbnb,US,San Francisco
+coinbase,Coinbase,fintech,greenhouse,coinbase,US,San Francisco
+instacart,Instacart,ecommerce,greenhouse,instacart,US,San Francisco
+robinhood,Robinhood,fintech,greenhouse,robinhood,US,Menlo Park
+affirm,Affirm,fintech,greenhouse,affirm,US,San Francisco
+reddit,Reddit,social,greenhouse,reddit,US,San Francisco
+discord,Discord,social,greenhouse,discord,US,San Francisco
+pinterest,Pinterest,social,greenhouse,pinterest,US,San Francisco
+cloudflare,Cloudflare,security,greenhouse,cloudflare,US,San Francisco
+dropbox,Dropbox,cloud,greenhouse,dropbox,US,San Francisco
+pagerduty,PagerDuty,monitoring,greenhouse,pagerduty,US,San Francisco
+gusto,Gusto,hr,greenhouse,gusto,US,San Francisco
+instabase,Instabase,ai,greenhouse,instabase,US,San Francisco
+flexport,Flexport,logistics,greenhouse,flexport,US,San Francisco
+carta,Carta,fintech,greenhouse,carta,US,San Francisco
+brex,Brex,fintech,greenhouse,brex,US,San Francisco
+checkr,Checkr,hr,greenhouse,checkr,US,San Francisco
+webflow,Webflow,software,greenhouse,webflow,US,San Francisco
+remote,Remote,hr,greenhouse,remote,PT,Lisbon
+samsara,Samsara,iot,greenhouse,samsara,US,San Francisco
+chime,Chime,fintech,greenhouse,chime,US,San Francisco
+lyft,Lyft,transportation,greenhouse,lyft,US,San Francisco
+peloton,Peloton,fitness,greenhouse,peloton,US,New York
+squarespace,Squarespace,software,greenhouse,squarespace,US,New York
+attentive,Attentive,marketing,greenhouse,attentive,US,New York
+toast,Toast,fintech,greenhouse,toast,US,Boston
+palantir,Palantir Technologies,enterprise,lever,palantir,US,Denver
+kraken,Kraken,crypto,lever,kraken,US,San Francisco
+gopuff,Gopuff,delivery,lever,gopuff,US,Philadelphia
+carbonhealth,Carbon Health,healthcare,lever,carbonhealth,US,San Francisco
+swordhealth,Sword Health,healthcare,lever,swordhealth,PT,Porto
+zeta,Zeta,fintech,lever,zeta,US,New York
+greenlight,Greenlight,fintech,lever,greenlight,US,Atlanta
+toptal,Toptal,staffing,lever,toptal,US,San Francisco
+voleon,The Voleon Group,finance,lever,voleon,US,Berkeley
 openai,OpenAI,ai,ashby,openai,US,San Francisco
+linear,Linear,productivity,ashby,linear,US,San Francisco
+loom,Loom,video,ashby,loom,US,San Francisco
+vanta,Vanta,compliance,ashby,vanta,US,San Francisco
+ramp,Ramp,fintech,ashby,ramp,US,New York
+notion,Notion,productivity,ashby,notion,US,San Francisco
+deel,Deel,hr,ashby,deel,US,San Francisco
+runway,Runway,media,ashby,runway,US,San Francisco
+watershed,Watershed,climate,ashby,watershed,US,San Francisco
+mercury,Mercury,fintech,ashby,mercury,US,San Francisco
+hex,Hex,data,ashby,hex,US,San Francisco
+cohere,Cohere,ai,ashby,cohere,CA,Toronto
+replit,Replit,dev-tools,ashby,replit,US,San Francisco
+posthog,PostHog,analytics,ashby,posthog,US,San Francisco
+attio,Attio,crm,ashby,attio,GB,London
+hightouch,Hightouch,data,ashby,hightouch,US,San Francisco
+elevenlabs,ElevenLabs,ai,ashby,elevenlabs,US,New York
