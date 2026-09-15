@@ -129,8 +129,8 @@ class TestCompanyRegistry:
 
     def test_registry_search_substring(self):
         registry = CompanyRegistry()
-        results = registry.search("spot")
-        assert any("spotify" in c.name.lower() for c in results)
+        results = registry.search("strip")
+        assert any("stripe" in c.name.lower() for c in results)
 
 
 class TestGreenhouseProvider:
@@ -191,7 +191,7 @@ class TestLeverProvider:
 
     def test_provider_has_boards(self):
         provider = LeverProvider()
-        assert "spotify" in provider.boards
+        assert "palantir" in provider.boards
 
     def test_parse_lever_records(self):
         provider = LeverProvider()

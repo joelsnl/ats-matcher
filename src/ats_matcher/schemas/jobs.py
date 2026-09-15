@@ -26,6 +26,7 @@ class JobSearchQuery(BaseModel):
     page: int = Field(default=0, ge=0, le=1000)
     has_verification: bool = False
     under_10_applicants: bool = False
+    indeed_country: str | None = Field(default=None, max_length=20)
 
     @model_validator(mode="before")
     @classmethod
@@ -127,6 +128,20 @@ class Job(BaseModel):
         return value
 
 
+class ProviderReadiness(BaseModel):
+    """Metadata about a provider's readiness and capabilities."""
+    kind: Literal["job_site", "company_board"] = "job_site"
+    available: bool = True
+    unavailable_reason: str | None = None
+    configured_boards: int = 0
+    supported_filters: list[str] = Field(default_factory=list)
+    unsupported_filters: list[str] = Field(default_factory=list)
+    default_date_behavior: str = "any"
+    countries: list[str] = Field(default_factory=list)
+    requires_dependency: str | None = None
+    last_check: str | None = None
+
+
 class ProviderStatus(BaseModel):
     provider: str
     status: Literal["ok", "partial", "error"] = "ok"
@@ -138,6 +153,7 @@ class ProviderStatus(BaseModel):
     error_code: str | None = None
     error: str | None = None
     retry_after: int | None = None
+    readiness: ProviderReadiness | None = None
 
 
 class ProviderResult(ProviderStatus):

@@ -9,7 +9,8 @@ const LiveSearch = (() => {
     return `<fieldset class="live-choices"><legend>${label}</legend><small>Choose any that suit you. Leave blank for all.</small><div>${rows.map(([value,text])=>`<label class="checkbox-field"><input type="checkbox" name="${name}" value="${value}" ${picked.includes(value)?'checked':''}>${text}</label>`).join('')}</div></fieldset>`;
   };
   const safeLink = value => {try{const url=new URL(value);return ['https:','http:'].includes(url.protocol)&&!url.username&&!url.password?escape(url.href):'';}catch{return '';}};
-  function defaults(){return state.shortlist.query?{...state.shortlist.query}:searchFromProfile();}
+  const getDateDefault = provider => provider==='linkedin'?'past_week':'any';
+  function defaults(){const q=state.shortlist.query?{...state.shortlist.query}:searchFromProfile();if(!q.date_since_posted){q.date_since_posted=getDateDefault(q.providers?.[0]||'linkedin');}return q;}
   function reset(useProfile=false){generation++;searchEpoch++;query=useProfile?searchFromProfile():null;result=null;error='';loading=false;}
   function render(target){
     const q=query||defaults();
@@ -83,7 +84,7 @@ const LiveSearch = (() => {
     const notes={
       linkedin:'Search public guest listings on LinkedIn.',
       greenhouse:'Search configured company boards (Stripe by default), or paste a Greenhouse board URL. Location matches listing text. Filters exclude jobs with missing details.',
-      lever:'Search configured company boards (Spotify by default), or paste a Lever board URL. Location matches listing text. Filters exclude jobs with missing details.',
+      lever:'Search configured company boards (Palantir by default), or paste a Lever board URL. Location matches listing text. Filters exclude jobs with missing details.',
       ashby:'Search configured company boards (OpenAI by default), or paste an Ashby board URL. Location matches listing text. Filters exclude jobs with missing details.',
       freehire:'Search the Freehire catalogue. Location is matched within each page; continue to the next page for more matches.',
       indeed:'Requires the optional Indeed package. Country comes from server settings. Some filters apply within each source page.'

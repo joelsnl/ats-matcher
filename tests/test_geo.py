@@ -15,6 +15,10 @@ def test_known_city_fills_country_when_missing():
     assert format_search_location(Location(city="Berlin")) == "Berlin, Germany"
 
 
+def test_country_only_location_remains_searchable():
+    assert format_search_location(Location(country="Germany")) == "Germany"
+
+
 def test_ambiguous_or_empty_location_is_left_alone():
     assert format_search_location(Location(city="Springfield")) == "Springfield"
     assert format_search_location(Location()) is None

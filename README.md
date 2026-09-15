@@ -165,7 +165,7 @@ Choose a source in **Live job search**, pass `--provider`, or set `JOBS_PROVIDER
 | --- | --- |
 | LinkedIn | Public guest search; default source. |
 | Greenhouse | Configured company boards; Stripe is the bundled example. |
-| Lever | Configured company boards; Spotify is the bundled example. EU boards are supported. |
+| Lever | Configured company boards; Palantir is the bundled example. EU boards are supported. |
 | Ashby | Configured company boards; OpenAI is the bundled example. |
 | Freehire | Public catalogue search; availability depends on upstream access controls. |
 | Indeed | Optional `python-jobspy` integration; install with `pip install -e ".[indeed]"`. |

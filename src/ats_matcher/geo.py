@@ -104,4 +104,35 @@ def format_search_location(location: Location | None) -> str | None:
         if country.lower() in city.lower() or city.lower() in country.lower():
             return city
         return f"{city}, {country}"
-    return city or country or filled.raw
+    return city or country or _clean(filled.raw)
+
+
+def normalize_location_str(value: str | None) -> str:
+     """Normalize a location string for substring matching."""
+     text = _clean(value)
+     if not text:
+         return ""
+     # Lowercase and remove common punctuation/whitespace variations
+     return text.lower().replace(",", "").replace("  ", " ").strip()
+
+
+def locations_match_flexible(query_location: str | None, job_location: str | None) -> bool:
+     """Check if job location matches query location with flexible matching.
+
+     Handles:
+     - "Berlin" matches "Berlin, Germany" or "Berlin"
+     - "Germany" matches any location with "Germany"
+     - "Berlin, Germany" matches "Berlin" or "Berlin, Germany"
+     """
+     if not query_location or not job_location:
+         return not query_location and not job_location
+
+     query_norm = normalize_location_str(query_location)
+     job_norm = normalize_location_str(job_location)
+
+     # Split by common delimiters to get components
+     query_parts = [p.strip() for p in query_norm.split(" ") if p.strip()]
+     job_text = job_norm
+
+     # Check if all query parts are in the job location
+     return all(part in job_text for part in query_parts)

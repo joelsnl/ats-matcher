@@ -14,6 +14,8 @@ from ats_matcher.jobs.cache import JobCache
 from ats_matcher.jobs.company_registry import CompanyRegistry
 from ats_matcher.jobs.providers.public_api import PublicAPI, records
 from ats_matcher.jobs.skills import mentioned_skills
+from ats_matcher.geo import locations_match_flexible
+
 from ats_matcher.schemas.jobs import Job, JobSearchQuery, ProviderResult
 
 
@@ -89,7 +91,7 @@ def _matches(job, query, now=None, *, keywords=True, location=True):
     alternatives = [[phrase or word for phrase, word in re.findall(r'\"([^\"]+)\"|(\S+)', group)] for group in groups]
     if keywords and not any(all(term.casefold() in haystack for term in terms) for terms in alternatives):
         return False
-    if location and query.location and query.location.casefold() not in (job.location or "").casefold():
+    if location and query.location and not locations_match_flexible(query.location, job.location):
         return False
     for selected, actual in ((query.workplace_type, job.workplace_type), (query.job_type, job.employment_type)):
         if selected and actual not in (selected if isinstance(selected, list) else [selected]):

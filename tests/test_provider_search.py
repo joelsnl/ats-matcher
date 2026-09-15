@@ -78,7 +78,7 @@ def test_company_search_has_no_duplicates_or_blank_matches():
     registry = CompanyRegistry()
     assert [c.slug for c in registry.search(" Stripe ")] == ["stripe"]
     assert registry.search(" ") == []
-    assert registry.get_by_board("lever", "spotify").name == "Spotify"
+    assert registry.get_by_board("lever", "palantir").name == "Palantir Technologies"
 
 
 def test_configured_boards_and_empty_override():

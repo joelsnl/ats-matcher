@@ -4,6 +4,11 @@ JobSpy owns HTTP timeouts/retries. No proxy configuration is supplied here.
 """
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
+from importlib.util import find_spec
+
 from ats_matcher.jobs.base import ProviderError
 from ats_matcher.jobs.cache import JobCache
 from ats_matcher.jobs.providers.ats import _matches, _text, date_days, make_job, normalize_type, posted_date, unsupported_filters, with_skills
@@ -20,11 +25,9 @@ class IndeedProvider:
 
     def _get_scraper(self):
         if self._scrape is None:
-            try:
-                from jobspy import scrape_jobs
-            except ImportError as exc:
-                raise ProviderError("dependency_missing", 'Indeed requires the optional extra: pip install -e ".[indeed]"') from exc
-            self._scrape = scrape_jobs
+            if find_spec("jobspy") is None:
+                raise ProviderError("dependency_missing", 'Indeed requires the optional extra: pip install -e ".[indeed]"')
+            self._scrape = _isolated_scrape
         return self._scrape
 
     def _job(self, row):
@@ -51,7 +54,9 @@ class IndeedProvider:
         limit = query.limit if limit is None else limit
         if not 1 <= limit <= 100:
             raise ValueError("limit must be between 1 and 100")
-        key = f"{self.country}:{query.model_dump_json()}:{limit}"
+        # Use country from query if provided, otherwise use default
+        country = query.indeed_country.strip().lower() if query.indeed_country else self.country
+        key = f"{country}:{query.model_dump_json()}:{limit}"
         cached = self.cache.get(key)
         if cached is not None:
             cached.cached = True
@@ -61,9 +66,11 @@ class IndeedProvider:
             # JobSpy cannot combine hours_old with its job_type/is_remote filters.
             # Request dates upstream and apply the other available fields locally.
             frame = scrape(site_name=["indeed"], search_term=query.keywords, location=query.location,
-                country_indeed=self.country, results_wanted=limit, offset=query.page * limit,
+                country_indeed=country, results_wanted=limit, offset=query.page * limit,
                 hours_old=date_days(query) * 24 if date_days(query) else None, description_format="plain", verbose=0)
-            rows = [] if frame is None else frame.to_dict("records")
+            rows = frame if isinstance(frame, list) else ([] if frame is None else frame.to_dict("records"))
+        except ProviderError:
+            raise
         except Exception as exc:
             raise ProviderError("fetch_error", "Indeed search failed. Check JOBS_INDEED_COUNTRY and try again later.") from exc
         jobs, seen, skipped = [], set(), 0
@@ -90,3 +97,19 @@ class IndeedProvider:
             status="partial" if warnings else "ok", warnings=warnings)
         self.cache.set(key, result)
         return result
+
+
+def _isolated_scrape(**kwargs):
+    """Keep JobSpy's native TLS library outside the HTTP server process."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "ats_matcher.jobs.providers.indeed_worker"],
+            input=json.dumps(kwargs), capture_output=True, text=True, encoding="utf-8",
+            timeout=120,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ProviderError("fetch_error", "Indeed search timed out. Try again later or choose another source.") from exc
+    if result.returncode:
+        raise ProviderError("fetch_error", "Indeed's search worker stopped unexpectedly. Try another source or reinstall the optional Indeed package.")
+    return json.loads(result.stdout)
